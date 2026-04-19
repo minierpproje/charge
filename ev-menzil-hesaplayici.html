@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EV Menzil Hesaplayıcı</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--bg2:#161820;--bg3:#1e2028;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#f0f0f2;--text2:#9a9aaa;--text3:#5a5a6a;--blue:#4a9eff;--blue-dim:rgba(74,158,255,0.12);--green:#3ecf8e;--green-dim:rgba(62,207,142,0.12);--amber:#f5a623;--amber-dim:rgba(245,166,35,0.12);--red:#f24a4a;--red-dim:rgba(242,74,74,0.12);--purple:#9d7cf4;--r:12px;--rs:8px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+header{padding:1rem 1.5rem;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--bg2);}
+.logo{width:32px;height:32px;background:var(--blue-dim);border:0.5px solid var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+header h1{font-size:16px;font-weight:500;}
+header p{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;}
+.layout{display:grid;grid-template-columns:380px 1fr;flex:1;height:calc(100vh - 61px);}
+.sidebar{background:var(--bg2);border-right:0.5px solid var(--border);overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.875rem;}
+.main{display:flex;flex-direction:column;}
+#map{flex:1;}
+.bottom-bar{background:var(--bg2);border-top:0.5px solid var(--border);padding:.875rem 1.25rem;display:flex;gap:.75rem;}
+.card{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r);padding:1rem;}
+.card-title{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem;font-family:'DM Mono',monospace;}
+.loc-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.loc-pin{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.loc-pin.a{background:var(--blue)}.loc-pin.b{background:var(--purple)}.loc-pin.wp{background:var(--amber)}
+.loc-input{flex:1;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--rs);padding:7px 10px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;}
+.loc-input:focus{border-color:var(--blue);}
+.loc-input::placeholder{color:var(--text3);}
+.swap-btn{width:100%;margin:6px 0;padding:5px;background:transparent;border:0.5px solid var(--border);border-radius:var(--rs);color:var(--text3);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;}
+.swap-btn:hover{border-color:var(--border2);color:var(--text2);}
+.calc-btn{width:100%;padding:9px;background:var(--blue);border:none;border-radius:var(--rs);color:#fff;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:8px;transition:opacity .15s;}
+.calc-btn:hover{opacity:.85;}.calc-btn:disabled{opacity:.35;cursor:not-allowed;}
+.field{margin-bottom:.75rem;}.field:last-child{margin-bottom:0;}
+.fl{display:flex;justify-content:space-between;margin-bottom:5px;}
+.fl span{font-size:12px;color:var(--text2);}
+.fl .fv{font-size:12px;font-weight:500;color:var(--text);font-family:'DM Mono',monospace;}
+input[type=range]{width:100%;-webkit-appearance:none;height:3px;border-radius:2px;background:var(--border2);outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid var(--bg);}
+.cbar{height:3px;border-radius:2px;background:var(--border);margin-top:5px;overflow:hidden;}
+.cfill{height:100%;border-radius:2px;transition:width .3s,background .3s;}
+.eff{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--rs);padding:7px 10px;margin-top:8px;font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;line-height:1.7;}
+.eff b{color:var(--text);font-weight:500;}
+.tab-bar{display:flex;gap:4px;margin-bottom:.75rem;}
+.tab-btn{flex:1;padding:5px 6px;font-size:10px;font-weight:500;font-family:'DM Mono',monospace;background:transparent;border:0.5px solid var(--border);border-radius:var(--rs);color:var(--text3);cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:.04em;}
+.tab-btn.active{background:var(--blue-dim);border-color:var(--blue);color:var(--blue);}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+.metric{flex:1;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--rs);padding:.625rem .875rem;}
+.metric .ml{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace;}
+.metric .mv{font-size:17px;font-weight:500;color:var(--text);margin-top:3px;font-family:'DM Mono',monospace;}
+.metric .mv.green{color:var(--green);}.metric .mv.amber{color:var(--amber);}.metric .mv.red{color:var(--red);}
+.ri{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:6px;padding:5px 8px;background:var(--bg2);border-radius:var(--rs);border:0.5px solid var(--border);display:none;}
+.err{font-size:12px;color:var(--red);background:var(--red-dim);border-radius:var(--rs);padding:7px 10px;margin-top:6px;display:none;}
+.empty{font-size:12px;color:var(--text3);text-align:center;padding:1.25rem 0;}
+/* Journey */
+.jstep{display:flex;gap:10px;padding:.65rem 0;border-bottom:0.5px solid var(--border);}
+.jstep:last-child{border-bottom:none;}
+.jleft{display:flex;flex-direction:column;align-items:center;width:16px;flex-shrink:0;}
+.jdot{width:10px;height:10px;border-radius:50%;}
+.jline{width:2px;flex:1;min-height:16px;margin-top:4px;background:var(--border2);}
+.jbody{flex:1;min-width:0;}
+.jname{font-size:13px;font-weight:500;color:var(--text);}
+.jmeta{font-size:11px;color:var(--text2);margin-top:2px;font-family:'DM Mono',monospace;}
+.jnote{font-size:11px;color:var(--text3);margin-top:1px;}
+.jbadge{font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,0.06);color:var(--text3);font-family:'DM Mono',monospace;}
+/* Suggestion */
+.sbox{background:var(--bg2);border:0.5px solid var(--amber);border-radius:var(--rs);padding:10px;margin-top:6px;}
+.slabel{font-size:10px;color:var(--amber);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.sitem{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--rs);margin-bottom:5px;cursor:pointer;transition:all .15s;background:var(--bg3);}
+.sitem:last-child{margin-bottom:0;}
+.sitem:hover{border-color:var(--green);background:var(--green-dim);}
+.sitem.best{border-color:var(--green);}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.sname{font-size:12px;font-weight:500;color:var(--text);}
+.smeta{font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px;}
+.snote2{font-size:10px;color:var(--text3);margin-top:1px;}
+.sbadge{font-size:10px;padding:1px 5px;border-radius:3px;background:var(--green-dim);color:var(--green);font-family:'DM Mono',monospace;margin-left:4px;vertical-align:middle;}
+.ok-note{font-size:11px;color:var(--green);padding:8px 10px;background:var(--green-dim);border-radius:var(--rs);margin-top:6px;font-family:'DM Mono',monospace;}
+/* wp */
+.wp-list{margin-top:6px;}
+.wp-item{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.wp-item .loc-input{font-size:12px;padding:6px 8px;}
+.wp-rm{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:0 4px;line-height:1;}
+.wp-rm:hover{color:var(--red);}
+/* alt routes */
+.alt-routes{margin-top:8px;}
+.ari{display:flex;align-items:center;gap:8px;padding:7px 8px;border:0.5px solid var(--border);border-radius:var(--rs);margin-bottom:5px;cursor:pointer;transition:all .15s;}
+.ari:hover{border-color:var(--border2);background:var(--bg2);}
+.ari.active{border-color:var(--blue);background:var(--blue-dim);}
+.arc{width:12px;height:4px;border-radius:2px;flex-shrink:0;}
+.ari-info{flex:1;}
+.ari-name{font-size:12px;font-weight:500;color:var(--text);}
+.ari-meta{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:1px;}
+/* modal */
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:1000;}
+.moverlay.show{display:flex;}
+.mbox{background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);padding:1.25rem;width:320px;max-width:90vw;}
+.mbox h3{font-size:14px;font-weight:500;margin-bottom:6px;}
+.mbox p{font-size:12px;color:var(--text2);margin-bottom:1rem;line-height:1.5;}
+.mbtns{display:flex;gap:8px;}
+.mbtns button{flex:1;padding:8px;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:opacity .15s;}
+.mbtns button:hover{opacity:.85;}
+.bconfirm{background:var(--green);color:#fff;}
+.bcancel{background:var(--bg2);color:var(--text2);border:0.5px solid var(--border2)!important;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.pac-container{background:var(--bg3)!important;border:0.5px solid var(--border2)!important;border-radius:var(--rs)!important;box-shadow:0 8px 24px rgba(0,0,0,.5)!important;font-family:'DM Sans',sans-serif!important;}
+.pac-item{background:transparent!important;color:var(--text2)!important;border-top:0.5px solid var(--border)!important;font-size:13px!important;padding:7px 12px!important;cursor:pointer;}
+.pac-item:hover,.pac-item-selected{background:var(--bg2)!important;}
+.pac-item-query{color:var(--text)!important;font-size:13px!important;}
+.pac-icon{display:none!important;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">⚡</div>
+  <div><h1>EV Menzil Hesaplayıcı</h1><p>elektrikli araç · güzergah · şarj planlayıcı</p></div>
+</header>
+<div class="layout">
+  <div class="sidebar">
+
+    <div class="card">
+      <div class="card-title">Güzergah</div>
+      <div class="loc-row"><div class="loc-pin a"></div><input id="inp-origin" class="loc-input" type="text" placeholder="Nereden..." value="Antalya, Türkiye"></div>
+      <button class="swap-btn" onclick="swapLoc()">⇅ başlangıç / bitiş değiştir</button>
+      <div class="loc-row"><div class="loc-pin b"></div><input id="inp-dest" class="loc-input" type="text" placeholder="Nereye..." value="İstanbul, Türkiye"></div>
+      <div class="wp-list" id="wp-list"></div>
+      <button class="calc-btn" id="calc-btn" onclick="calcRoute()">Güzergahı Hesapla</button>
+      <div id="route-err" class="err"></div>
+      <div id="route-info" class="ri"></div>
+      <div id="alt-routes" class="alt-routes" style="display:none;">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace;margin-bottom:6px;">Alternatif güzergahlar</div>
+        <div id="alt-list"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="stab('fab')">Fabrika</button>
+        <button class="tab-btn" onclick="stab('tuk')">Tüketim</button>
+        <button class="tab-btn" onclick="stab('sarj')">Şarj</button>
+      </div>
+      <div id="stab-fab" class="tab-panel active">
+        <div class="field"><div class="fl"><span>Batarya kapasitesi</span><span class="fv" id="o-bat">60 kWh</span></div><input type="range" id="battery" min="20" max="120" value="60" step="1"></div>
+        <div class="field"><div class="fl"><span>WLTP menzil</span><span class="fv" id="o-wltp">400 km</span></div><input type="range" id="wltp" min="100" max="700" value="400" step="10"></div>
+      </div>
+      <div id="stab-tuk" class="tab-panel">
+        <div class="field"><div class="fl"><span>Gerçek tüketim</span><span class="fv" id="o-con">18 kWh/100km</span></div><input type="range" id="consumption" min="10" max="40" value="18" step="0.5"></div>
+        <div id="eff-box" class="eff"></div>
+      </div>
+      <div id="stab-sarj" class="tab-panel">
+        <div class="field"><div class="fl"><span>Mevcut şarj</span><span class="fv" id="o-chg">80%</span></div><input type="range" id="charge" min="5" max="100" value="80" step="1"><div class="cbar"><div class="cfill" id="cfill" style="width:80%;background:var(--green);"></div></div></div>
+        <div class="field"><div class="fl"><span>Min. varış şarjı</span><span class="fv" id="o-min">10%</span></div><input type="range" id="mincharge" min="0" max="30" value="10" step="1"></div>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1;">
+      <div class="card-title" id="plan-title">Yolculuk Planı</div>
+      <div id="journey-plan"><div class="empty">Güzergahı hesaplayın</div></div>
+    </div>
+
+  </div>
+  <div class="main">
+    <div id="map"></div>
+    <div class="bottom-bar">
+      <div class="metric"><div class="ml">Güzergah</div><div class="mv" id="m-dist">—</div></div>
+      <div class="metric"><div class="ml">Gerçek menzil</div><div class="mv" id="m-range">—</div></div>
+      <div class="metric"><div class="ml">Kalan menzil</div><div class="mv" id="m-avail">—</div></div>
+      <div class="metric"><div class="ml">Durak</div><div class="mv" id="m-stops">—</div></div>
+      <div class="metric"><div class="ml">Süre</div><div class="mv" id="m-dur">—</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="moverlay" id="modal">
+  <div class="mbox">
+    <h3 id="m-title">Durak eklensin mi?</h3>
+    <p id="m-body"></p>
+    <div class="mbtns">
+      <button class="bconfirm" onclick="confirmStop()">Ekle & Güncelle</button>
+      <button class="bcancel" onclick="closeModal()">İptal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Globals ───────────────────────────────────────────────
+let map, dirSvc, placesSvc;
+let renderers = [], allRoutes = [], selIdx = 0;
+let stMarkers = [], stIWs = [];
+let confirmedStops = []; // {placeId,name,lat,lng,dist,vicinity}
+let wpData = [];         // {label,latlng} — parallel to wp-list DOM items
+let pendingStop = null;
+let routeKm = 0, routePath = null;
+
+// ── Init ──────────────────────────────────────────────────
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: {lat:38.5,lng:31.5}, zoom: 6,
+    mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
+    styles: [
+      {elementType:'geometry',stylers:[{color:'#1a1c24'}]},
+      {elementType:'labels.text.fill',stylers:[{color:'#8a8a9a'}]},
+      {elementType:'labels.text.stroke',stylers:[{color:'#1a1c24'}]},
+      {featureType:'road',elementType:'geometry',stylers:[{color:'#2a2c38'}]},
+      {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#3a3c4a'}]},
+      {featureType:'water',elementType:'geometry',stylers:[{color:'#111318'}]},
+      {featureType:'poi',elementType:'labels',stylers:[{visibility:'off'}]},
+      {featureType:'transit',stylers:[{visibility:'off'}]},
+    ]
+  });
+  dirSvc   = new google.maps.DirectionsService();
+  placesSvc = new google.maps.places.PlacesService(map);
+  new google.maps.places.Autocomplete(document.getElementById('inp-origin'), {componentRestrictions:{country:'tr'},types:['geocode']});
+  new google.maps.places.Autocomplete(document.getElementById('inp-dest'),   {componentRestrictions:{country:'tr'},types:['geocode']});
+  updateDisplays();
+  calcRoute();
+}
+
+// ── Helpers ───────────────────────────────────────────────
+function swapLoc() {
+  const a = document.getElementById('inp-origin').value;
+  const b = document.getElementById('inp-dest').value;
+  document.getElementById('inp-origin').value = b;
+  document.getElementById('inp-dest').value   = a;
+}
+
+function usableNow() {
+  const bat = +document.getElementById('battery').value;
+  const con = +document.getElementById('consumption').value;
+  const chg = +document.getElementById('charge').value;
+  const min = +document.getElementById('mincharge').value;
+  return Math.max(0, bat * (chg - min) / 100 / con * 100);
+}
+function usableFull() {
+  const bat = +document.getElementById('battery').value;
+  const con = +document.getElementById('consumption').value;
+  const min = +document.getElementById('mincharge').value;
+  return Math.max(0, bat * (100 - min) / 100 / con * 100);
+}
+function realRange() {
+  return Math.round(+document.getElementById('battery').value / +document.getElementById('consumption').value * 100);
+}
+
+// ── Display updates ───────────────────────────────────────
+function updateDisplays() {
+  const bat = +document.getElementById('battery').value;
+  const wltp= +document.getElementById('wltp').value;
+  const con = +document.getElementById('consumption').value;
+  const chg = +document.getElementById('charge').value;
+  const min = +document.getElementById('mincharge').value;
+
+  document.getElementById('o-bat').textContent  = bat + ' kWh';
+  document.getElementById('o-wltp').textContent = wltp + ' km';
+  document.getElementById('o-con').textContent  = con.toFixed(1) + ' kWh/100km';
+  document.getElementById('o-chg').textContent  = chg + '%';
+  document.getElementById('o-min').textContent  = min + '%';
+
+  const cf = document.getElementById('cfill');
+  cf.style.width = chg + '%';
+  cf.style.background = chg < 20 ? 'var(--red)' : chg < 40 ? 'var(--amber)' : 'var(--green)';
+
+  const fc = bat / wltp * 100, ratio = con / fc, rr = realRange();
+  const diff = ((ratio-1)*100).toFixed(0);
+  const dc = ratio<=1.05?'var(--green)':ratio<=1.2?'var(--amber)':'var(--red)';
+  document.getElementById('eff-box').innerHTML =
+    `fabrika: <b>${fc.toFixed(1)} kWh/100km</b><br>` +
+    `fark: <b style="color:${dc}">${ratio>1?'+':''}${diff}%</b><br>` +
+    `gerçek tam menzil: <b>${rr} km</b>`;
+
+  document.getElementById('m-range').textContent = rr + ' km';
+  document.getElementById('m-range').className   = 'mv ' + (rr>=350?'green':rr>=200?'amber':'red');
+  const av = usableNow();
+  document.getElementById('m-avail').textContent = Math.round(av) + ' km';
+  document.getElementById('m-avail').className   = 'mv ' + (av>=300?'green':av>=150?'amber':'red');
+
+  if (allRoutes.length > 0) buildPlan();
+}
+
+// ── Route calculation ─────────────────────────────────────
+function buildWaypoints() {
+  return wpData
+    .filter(Boolean)
+    .map(wp => ({
+      location: wp.latlng
+        ? new google.maps.LatLng(wp.latlng.lat, wp.latlng.lng)
+        : wp.label,
+      stopover: true
+    }));
+}
+
+function calcRoute() {
+  const origin = document.getElementById('inp-origin').value.trim();
+  const dest   = document.getElementById('inp-dest').value.trim();
+  if (!origin || !dest) return;
+
+  const btn = document.getElementById('calc-btn');
+  btn.disabled = true; btn.textContent = 'Hesaplanıyor...';
+  document.getElementById('route-err').style.display  = 'none';
+  document.getElementById('route-info').style.display = 'none';
+  document.getElementById('alt-routes').style.display = 'none';
+
+  renderers.forEach(r => r.setMap(null)); renderers = [];
+  clearMarkers();
+  allRoutes = []; selIdx = 0;
+
+  const wps = buildWaypoints();
+
+  dirSvc.route({
+    origin, destination: dest,
+    waypoints: wps,
+    travelMode: google.maps.TravelMode.DRIVING,
+    provideRouteAlternatives: wps.length === 0, // alternatif sadece durak yoksa
+    region: 'tr'
+  }, (result, status) => {
+    btn.disabled = false; btn.textContent = 'Güzergahı Hesapla';
+    if (status === 'OK') {
+      allRoutes = result.routes;
+      allRoutes.forEach((route, i) => {
+        const r = new google.maps.DirectionsRenderer({
+          directions: result, routeIndex: i,
+          suppressMarkers: false,
+          polylineOptions: {
+            strokeColor: ['#4a9eff','#3ecf8e','#f5a623','#f24a4a'][i%4],
+            strokeWeight: i===0 ? 5 : 3,
+            strokeOpacity: i===0 ? 0.9 : 0.35
+          }
+        });
+        r.setMap(map); renderers.push(r);
+      });
+      applyRoute(0);
+      renderAltList();
+      document.getElementById('route-info').style.display = 'block';
+      if (allRoutes.length > 1) document.getElementById('alt-routes').style.display = 'block';
+    } else {
+      document.getElementById('route-err').style.display = 'block';
+      document.getElementById('route-err').textContent = 'Güzergah bulunamadı. Şehir isimlerini kontrol edin.';
+    }
+  });
+}
+
+// Apply a route index — does NOT reset stops (only called after calcRoute finishes)
+function applyRoute(idx) {
+  selIdx = idx;
+  renderers.forEach((r, i) => r.setOptions({
+    polylineOptions: {
+      strokeColor: ['#4a9eff','#3ecf8e','#f5a623','#f24a4a'][i%4],
+      strokeWeight: i===idx ? 5 : 3,
+      strokeOpacity: i===idx ? 0.9 : 0.35
+    }
+  }));
+  document.querySelectorAll('.ari').forEach((el, i) => el.classList.toggle('active', i===idx));
+
+  const route = allRoutes[idx];
+  const legs  = route.legs;
+  const dist  = legs.reduce((s,l) => s + l.distance.value, 0);
+  const dur   = legs.reduce((s,l) => s + l.duration.value, 0);
+  routeKm   = Math.round(dist / 1000);
+  routePath = route.overview_path;
+  const hrs = Math.floor(dur/3600), mins = Math.floor((dur%3600)/60);
+
+  document.getElementById('route-info').textContent = routeKm + ' km · ' + hrs + ' sa ' + mins + ' dk';
+  document.getElementById('m-dist').textContent = routeKm + ' km';
+  document.getElementById('m-dur').textContent  = hrs + 'sa ' + mins + 'dk';
+
+  buildPlan();
+}
+
+// Switch route — resets stops
+function switchRoute(idx) {
+  confirmedStops = [];
+  wpData = [];
+  document.getElementById('wp-list').innerHTML = '';
+  applyRoute(idx);
+}
+
+function renderAltList() {
+  const list = document.getElementById('alt-list');
+  list.innerHTML = '';
+  allRoutes.forEach((route, i) => {
+    const legs = route.legs;
+    const km   = Math.round(legs.reduce((s,l)=>s+l.distance.value,0)/1000);
+    const dur  = legs.reduce((s,l)=>s+l.duration.value,0);
+    const hrs  = Math.floor(dur/3600), mins = Math.floor((dur%3600)/60);
+    const div  = document.createElement('div');
+    div.className = 'ari' + (i===0?' active':'');
+    div.innerHTML = `
+      <div class="arc" style="background:${ ['#4a9eff','#3ecf8e','#f5a623','#f24a4a'][i%4] }"></div>
+      <div class="ari-info">
+        <div class="ari-name">${route.summary || ('Güzergah '+(i+1))}</div>
+        <div class="ari-meta">${km} km · ${hrs} sa ${mins} dk</div>
+      </div>`;
+    div.onclick = () => switchRoute(i);
+    list.appendChild(div);
+  });
+}
+
+// ── Journey plan ──────────────────────────────────────────
+function buildPlan() {
+  clearMarkers();
+  const origin = document.getElementById('inp-origin').value;
+  const dest   = document.getElementById('inp-dest').value;
+
+  const stops = [...confirmedStops].sort((a,b) => a.dist - b.dist);
+
+  const startRange = usableNow();
+  const fullRange  = usableFull();
+
+  // After last stop, how far can we go?
+  let lastKm = 0, rangeFromHere = startRange;
+  if (stops.length > 0) {
+    lastKm = stops[stops.length-1].dist;
+    rangeFromHere = fullRange;
+  }
+  const reachUntil  = Math.min(lastKm + rangeFromHere, routeKm);
+  const canFinish   = reachUntil >= routeKm;
+
+  // Confirmed stop markers (amber)
+  stops.forEach(s => {
+    const m = new google.maps.Marker({
+      position: {lat:s.lat, lng:s.lng}, map,
+      icon: {path:google.maps.SymbolPath.CIRCLE, scale:9, fillColor:'#f5a623', fillOpacity:1, strokeColor:'#0f1117', strokeWeight:2},
+      title: s.name
+    });
+    stMarkers.push(m);
+  });
+
+  // Build HTML
+  let html = jStep('var(--blue)', true, origin, 'başlangıç', 'Menzil: ' + Math.round(startRange) + ' km');
+
+  stops.forEach((s, i) => {
+    html += jStep('var(--amber)', true, '⚡ ' + s.name, 'şarj durağı · ~' + s.dist + ' km', s.vicinity || '');
+  });
+
+  if (canFinish) {
+    html += `<div class="jstep">
+      <div class="jleft"><div class="jdot" style="background:var(--green);opacity:.5;"></div></div>
+      <div class="jbody"><div class="ok-note">✓ Varış noktasına menzil yeterli — ekstra durak gerekmeyebilir</div></div>
+    </div>`;
+  } else {
+    html += `<div class="jstep">
+      <div class="jleft"><div class="jdot" style="background:var(--amber);opacity:.4;"></div></div>
+      <div class="jbody" style="flex:1;">
+        <div class="sbox">
+          <div class="slabel">Sıradaki şarj durağı — ~${Math.round(lastKm)}–${Math.round(reachUntil)} km arası, en uzak erişilebilir önce</div>
+          <div id="sug-list"><div class="empty" style="padding:4px 0;">Öneriler aranıyor...</div></div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  html += jStep('var(--purple)', false, dest, 'hedef', routeKm + ' km');
+
+  document.getElementById('journey-plan').innerHTML = html;
+  document.getElementById('m-stops').textContent = stops.length;
+  document.getElementById('m-stops').className   = 'mv ' + (stops.length > 0 ? 'green' : 'amber');
+
+  if (!canFinish) {
+    setTimeout(() => findNext(lastKm, reachUntil), 0);
+  }
+}
+
+function jStep(color, hasLine, name, badge, meta) {
+  return `<div class="jstep">
+    <div class="jleft">
+      <div class="jdot" style="background:${color}"></div>
+      ${hasLine ? '<div class="jline"></div>' : ''}
+    </div>
+    <div class="jbody">
+      <div class="jname">${name} <span class="jbadge">${badge}</span></div>
+      <div class="jmeta">${meta}</div>
+    </div>
+  </div>`;
+}
+
+// ── Station search ────────────────────────────────────────
+function pathKm(lat, lng) {
+  if (!routePath || routePath.length === 0) return 0;
+  const pt = new google.maps.LatLng(lat, lng);
+  let minD = Infinity, bestI = 0;
+  routePath.forEach((p, i) => {
+    const d = google.maps.geometry.spherical.computeDistanceBetween(pt, p);
+    if (d < minD) { minD = d; bestI = i; }
+  });
+  return Math.round((bestI / routePath.length) * routeKm);
+}
+
+function findNext(fromKm, untilKm) {
+  if (!routePath) return;
+  const n = routePath.length;
+  const u = untilKm / routeKm;
+  const f = fromKm  / routeKm;
+
+  // Sample near the range limit — we want the farthest reachable stations
+  const idxs = [
+    Math.floor(n * Math.min(u - 0.02, 0.98)),
+    Math.floor(n * Math.min(u - 0.07, 0.95)),
+    Math.floor(n * Math.min(u - 0.13, 0.90)),
+    Math.floor(n * ((f*2 + u) / 3)),
+  ].map(i => Math.min(Math.max(i, 0), n-1));
+
+  const found = [];
+  let pending = idxs.length;
+
+  idxs.forEach(i => {
+    placesSvc.nearbySearch({
+      location: routePath[i],
+      radius: 20000,
+      keyword: 'elektrikli araç şarj EV charging'
+    }, (results, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+        results.forEach(r => { if (!found.find(x => x.place_id === r.place_id)) found.push(r); });
+      }
+      pending--;
+      if (pending === 0) showSuggestions(found, fromKm, untilKm);
+    });
+  });
+}
+
+function showSuggestions(results, fromKm, untilKm) {
+  const existingIds = new Set(confirmedStops.map(s => s.placeId));
+  const filtered = results.filter(r => !existingIds.has(r.place_id));
+
+  // Map each to real path km
+  const withKm = filtered.map(place => {
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+    return { place, lat, lng, km: pathKm(lat, lng) };
+  });
+
+  // Keep only those in the reachable window
+  const inRange = withKm.filter(s => s.km > fromKm && s.km <= untilKm);
+
+  // Sort farthest first
+  inRange.sort((a, b) => b.km - a.km);
+
+  // Blue markers for suggestions
+  inRange.slice(0, 5).forEach(({ place, lat, lng, km }, i) => {
+    const color = i === 0 ? '#3ecf8e' : '#4a9eff';
+    const m = new google.maps.Marker({
+      position: {lat, lng}, map,
+      icon: {path:google.maps.SymbolPath.CIRCLE, scale: i===0?9:7, fillColor:color, fillOpacity:0.9, strokeColor:'#0f1117', strokeWeight:2},
+      title: place.name
+    });
+    const iw = new google.maps.InfoWindow({
+      content: `<div style="font-family:'DM Sans',sans-serif;font-size:13px;min-width:160px;padding:4px;"><b>${place.name}</b><br><span style="font-size:11px;color:#9a9aaa;">~${km} km · ${place.vicinity||''}</span></div>`
+    });
+    m.addListener('click', () => { stIWs.forEach(w => w.close()); iw.open(map, m); });
+    stMarkers.push(m); stIWs.push(iw);
+  });
+
+  const el = document.getElementById('sug-list');
+  if (!el) return;
+
+  if (!inRange.length) {
+    el.innerHTML = `<div class="empty" style="padding:4px 0;">Bu aralıkta erişilebilir istasyon bulunamadı</div>`;
+    return;
+  }
+
+  let html = '';
+  inRange.slice(0, 4).forEach(({ place, lat, lng, km }, i) => {
+    const rating = place.rating ? '⭐' + place.rating : '';
+    const diff   = km - fromKm;
+    const isBest = i === 0;
+    const safeId   = place.place_id;
+    const safeName = place.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const safeVic  = (place.vicinity||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+    html += `<div class="sitem${isBest?' best':''}" onclick="askStop('${safeId}','${safeName}',${lat},${lng},${km},'${safeVic}')">
+      <div class="sdot" style="background:${isBest?'var(--green)':'#4a9eff'}"></div>
+      <div>
+        <div class="sname">${place.name}${isBest?'<span class="sbadge">en uzak</span>':''}</div>
+        <div class="smeta">~${km} km · son duraktan +${diff} km · ${rating}</div>
+        <div class="snote2">${place.vicinity||''}</div>
+      </div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+// ── Stop add / remove ─────────────────────────────────────
+function askStop(placeId, name, lat, lng, km, vicinity) {
+  pendingStop = {placeId, name, lat, lng, km, vicinity};
+  document.getElementById('m-title').textContent = 'Durak eklensin mi?';
+  document.getElementById('m-body').textContent  =
+    `"${name}" güzergaha ~${km} km noktasında şarj durağı olarak eklensin mi? Rota yeniden hesaplanacak.`;
+  document.getElementById('modal').classList.add('show');
+}
+
+function confirmStop() {
+  if (!pendingStop) return;
+  const s = pendingStop; pendingStop = null;
+  document.getElementById('modal').classList.remove('show');
+
+  // Add to confirmed stops
+  confirmedStops.push({placeId:s.placeId, name:s.name, lat:s.lat, lng:s.lng, dist:s.km, vicinity:s.vicinity});
+
+  // Add to waypoints array
+  const idx = wpData.length;
+  wpData.push({label:s.name, latlng:{lat:s.lat, lng:s.lng}});
+
+  // Add to wp-list UI
+  const wpList = document.getElementById('wp-list');
+  const div = document.createElement('div');
+  div.className = 'wp-item'; div.id = 'wpi-' + idx;
+  div.innerHTML = `
+    <div class="loc-pin wp"></div>
+    <input class="loc-input" type="text" value="${s.name}" readonly style="opacity:.7;font-size:12px;padding:6px 8px;">
+    <button class="wp-rm" onclick="removeStop(${idx})">×</button>`;
+  wpList.appendChild(div);
+
+  // Recalculate with new waypoint
+  setTimeout(() => calcRoute(), 150);
+}
+
+function removeStop(idx) {
+  const el = document.getElementById('wpi-' + idx);
+  if (el) el.remove();
+  if (wpData[idx]) {
+    const name = wpData[idx].label;
+    confirmedStops = confirmedStops.filter(s => s.name !== name);
+    wpData[idx] = null;
+  }
+  setTimeout(() => calcRoute(), 150);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+  pendingStop = null;
+}
+
+function clearMarkers() {
+  stMarkers.forEach(m => m.setMap(null));
+  stIWs.forEach(w => w.close());
+  stMarkers = []; stIWs = [];
+}
+
+// ── Tabs ──────────────────────────────────────────────────
+function stab(name) {
+  ['fab','tuk','sarj'].forEach(t => {
+    document.getElementById('stab-'+t).classList.toggle('active', t===name);
+  });
+  document.querySelectorAll('.tab-btn').forEach((el,i) => {
+    el.classList.toggle('active', ['fab','tuk','sarj'][i]===name);
+  });
+}
+
+// ── Events ────────────────────────────────────────────────
+['battery','wltp','consumption','charge','mincharge'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateDisplays);
+});
+document.getElementById('inp-origin').addEventListener('keydown', e => { if (e.key==='Enter') calcRoute(); });
+document.getElementById('inp-dest').addEventListener('keydown',   e => { if (e.key==='Enter') calcRoute(); });
+document.getElementById('modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeModal(); });
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA5bE7v4DD610XMlb8rfnHaI12lNXBm9xI&libraries=places,geometry&callback=initMap" async defer></script>
+</body>
+</html>
